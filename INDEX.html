@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UzhavanKart — System Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2333;
+    --border:    #30363d;
+    --border2:   #484f58;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --green:     #3fb950;
+    --green-bg:  #0d2b12;
+    --green-bd:  #196127;
+    --blue:      #58a6ff;
+    --blue-bg:   #051d4d;
+    --blue-bd:   #1f4e8c;
+    --purple:    #bc8cff;
+    --purple-bg: #1e0a3c;
+    --purple-bd: #5a2e9e;
+    --amber:     #e3b341;
+    --amber-bg:  #2d1f00;
+    --amber-bd:  #7d5200;
+    --coral:     #f78166;
+    --coral-bg:  #3d1200;
+    --coral-bd:  #8c2400;
+    --teal:      #39d353;
+    --teal-bg:   #003320;
+    --teal-bd:   #006630;
+    --gray-bg:   #161b22;
+    --gray-bd:   #30363d;
+    --pink:      #f778ba;
+    --pink-bg:   #3d0026;
+    --pink-bd:   #8c0052;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 32px 24px 60px;
+    min-width: 960px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .header h1 span { color: var(--green); }
+  .header p {
+    color: var(--muted);
+    margin-top: 6px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    background: var(--green-bg);
+    border: 1px solid var(--green-bd);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── LAYER WRAPPER ── */
+  .layer {
+    position: relative;
+    border: 1px dashed var(--border2);
+    border-radius: 12px;
+    padding: 14px 14px 18px;
+    margin-bottom: 12px;
+  }
+  .layer-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── MODULE CARD ── */
+  .card {
+    border-radius: 8px;
+    border: 1px solid;
+    padding: 9px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .card-sub {
+    font-size: 10px;
+    opacity: 0.7;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Colour variants */
+  .c-blue   { background: var(--blue-bg);   border-color: var(--blue-bd);   color: var(--blue);   }
+  .c-green  { background: var(--green-bg);  border-color: var(--green-bd);  color: var(--green);  }
+  .c-purple { background: var(--purple-bg); border-color: var(--purple-bd); color: var(--purple); }
+  .c-amber  { background: var(--amber-bg);  border-color: var(--amber-bd);  color: var(--amber);  }
+  .c-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  color: var(--coral);  }
+  .c-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   color: var(--teal);   }
+  .c-gray   { background: var(--gray-bg);   border-color: var(--gray-bd);   color: var(--muted);  }
+  .c-pink   { background: var(--pink-bg);   border-color: var(--pink-bd);   color: var(--pink);   }
+
+  /* ── FLEX ROW ── */
+  .row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .row > * { flex: 1; }
+
+  /* ── ICON CARD (top UI layer) ── */
+  .icon-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 8px;
+    border: 1px solid;
+    padding: 10px 14px;
+    flex: 1;
+  }
+  .icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  /* ── GATEWAY WIDE ── */
+  .gateway {
+    border-radius: 10px;
+    border: 1px solid var(--teal-bd);
+    background: var(--teal-bg);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .gateway-left h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--teal);
+  }
+  .gateway-left p {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+  }
+  .gateway-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .pill {
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--teal-bd);
+    color: var(--teal);
+    background: rgba(57,211,83,0.08);
+  }
+
+  /* ── ARROW ── */
+  .arrow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--border2);
+    font-size: 18px;
+    margin: 6px 0;
+    user-select: none;
+  }
+  .arrow-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── MODULE COLUMNS ── */
+  .module-columns {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  .module-col {
+    border-radius: 10px;
+    border: 1px solid;
+    overflow: hidden;
+  }
+  .module-col-header {
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-bottom: 1px solid;
+  }
+  .module-col-body {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .module-item {
+    border-radius: 6px;
+    border: 1px solid;
+    padding: 5px 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .id-tag {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.6;
+    margin-top: 1px;
+  }
+
+  /* border/bg for col variants */
+  .col-blue   { border-color: var(--blue-bd);   }
+  .col-green  { border-color: var(--green-bd);  }
+  .col-purple { border-color: var(--purple-bd); }
+  .col-amber  { border-color: var(--amber-bd);  }
+  .col-coral  { border-color: var(--coral-bd);  }
+
+  .col-blue   .module-col-header { background: var(--blue-bg);   color: var(--blue);   border-color: var(--blue-bd);   }
+  .col-green  .module-col-header { background: var(--green-bg);  color: var(--green);  border-color: var(--green-bd);  }
+  .col-purple .module-col-header { background: var(--purple-bg); color: var(--purple); border-color: var(--purple-bd); }
+  .col-amber  .module-col-header { background: var(--amber-bg);  color: var(--amber);  border-color: var(--amber-bd);  }
+  .col-coral  .module-col-header { background: var(--coral-bg);  color: var(--coral);  border-color: var(--coral-bd);  }
+
+  .col-blue   .module-item { background: rgba(88,166,255,0.06);  border-color: var(--blue-bd);   color: var(--blue);   }
+  .col-green  .module-item { background: rgba(63,185,80,0.06);   border-color: var(--green-bd);  color: var(--green);  }
+  .col-purple .module-item { background: rgba(188,140,255,0.06); border-color: var(--purple-bd); color: var(--purple); }
+  .col-amber  .module-item { background: rgba(227,179,65,0.06);  border-color: var(--amber-bd);  color: var(--amber);  }
+  .col-coral  .module-item { background: rgba(247,129,102,0.06); border-color: var(--coral-bd);  color: var(--coral);  }
+
+  .col-blue   .dot { background: var(--blue);   }
+  .col-green  .dot { background: var(--green);  }
+  .col-purple .dot { background: var(--purple); }
+  .col-amber  .dot { background: var(--amber);  }
+  .col-coral  .dot { background: var(--coral);  }
+
+  /* ── BACKEND SERVICE CHIPS ── */
+  .service-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    font-family: 'JetBrains Mono', monospace;
+    flex: 1;
+    text-align: center;
+    min-width: 110px;
+  }
+
+  /* ── DB ROW ── */
+  .db-card {
+    border-radius: 8px;
+    border: 1px solid var(--gray-bd);
+    background: var(--surface);
+    padding: 8px 12px;
+    text-align: center;
+    flex: 1;
+  }
+  .db-icon {
+    font-size: 20px;
+    margin-bottom: 3px;
+  }
+  .db-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .db-type {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 1px;
+  }
+
+  /* ── DATA FLOW PIPELINE ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .pipeline-step {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .pipeline-step .step-icon { font-size: 22px; }
+  .pipeline-step .step-name { font-size: 11px; font-weight: 600; margin-top: 4px; }
+  .pipeline-step .step-sub  { font-size: 9px; opacity: 0.65; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .pipeline-arrow {
+    font-size: 20px;
+    color: var(--border2);
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── ORDER FLOW ── */
+  .order-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .of-step {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 4px;
+  }
+  .of-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+  /* ── EXTERNAL SERVICES ── */
+  .ext-card {
+    border-radius: 8px;
+    border: 1px solid var(--pink-bd);
+    background: var(--pink-bg);
+    padding: 8px 12px;
+    flex: 1;
+    text-align: center;
+  }
+  .ext-icon { font-size: 18px; margin-bottom: 3px; }
+  .ext-name { font-size: 11px; font-weight: 600; color: var(--pink); }
+  .ext-sub  { font-size: 9px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 28px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .leg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ── DIVIDER ARROWS ── */
+  .flow-arrow {
+    text-align: center;
+    color: var(--border2);
+    font-size: 20px;
+    margin: 4px 0;
+    letter-spacing: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <h1>Uzhavan<span>Kart</span> — System Architecture</h1>
+  <p>Farmer to Customer Marketplace · SKUK Platform</p>
+  <span class="badge">SKUK · Python Django · PostgreSQL · REST API</span>
+</div>
+
+<!-- ══ LAYER 1: UI ══ -->
+<div class="layer">
+  <span class="layer-label">UI Layer — Web &amp; Mobile Frontend</span>
+  <div class="row">
+
+    <div class="icon-card c-blue">
+      <div class="icon-circle" style="background:var(--blue-bg);border:1px solid var(--blue-bd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div>
+        <div class="card-title" style="color:var(--blue)">Web App</div>
+        <div class="card-sub">HTML5 · CSS · Bootstrap · JS</div>
+      </div>
+    </div>
+
+    <div class="icon-card c-blue">
+      <div class="icon-circle" style="background:var(--blue-bg);border:1px solid var(--blue-bd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3"/></svg>
+      </div>
+      <div>
+        <div class="card-title" style="color:var(--blue)">Mobile App</div>
+        <div class="card-sub">React Native / Flutter</div>
+      </div>
+    </div>
+
+    <div class="icon-card c-purple">
+      <div class="icon-circle" style="background:var(--purple-bg);border:1px solid var(--purple-bd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M2 20c0-4 4-7 10-7s10 3 10 7"/></svg>
+      </div>
+      <div>
+        <div class="card-title" style="color:var(--purple)">Admin Panel</div>
+        <div class="card-sub">SKUK-A-001 · Role: Admin</div>
+      </div>
+    </div>
+
+    <div class="icon-card c-amber">
+      <div class="icon-circle" style="background:var(--amber-bg);border:1px solid var(--amber-bd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M8 7V5a2 2 0 0 0-4 0v2"/></svg>
+      </div>
+      <div>
+        <div class="card-title" style="color:var(--amber)">Hub Panel</div>
+        <div class="card-sub">SKUK-H-001 · Role: Hub</div>
+      </div>
+    </div>
+
+    <div class="icon-card c-coral">
+      <div class="icon-circle" style="background:var(--coral-bg);border:1px solid var(--coral-bd);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="card-title" style="color:var(--coral)">Agent Panel</div>
+        <div class="card-sub">SKUK-AG-001 · Role: Agent</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ LAYER 2: API GATEWAY ══ -->
+<div class="gateway">
+  <div class="gateway-left">
+    <h3>
+      <svg style="display:inline;vertical-align:-3px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      &nbsp;API Gateway — Django REST Framework
+    </h3>
+    <p>JWT Authentication · SKUK-ID Validator · Role-Based Access Control · REST Endpoints</p>
+  </div>
+  <div class="gateway-pills">
+    <span class="pill">JWT Auth</span>
+    <span class="pill">SKUK-ID</span>
+    <span class="pill">RBAC</span>
+    <span class="pill">REST API</span>
+    <span class="pill">Rate Limit</span>
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ LAYER 3: MODULES ══ -->
+<div class="layer">
+  <span class="layer-label">Application Modules</span>
+  <div class="module-columns">
+
+    <!-- Users -->
+    <div class="module-col col-blue">
+      <div class="module-col-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </div>
+      <div class="module-col-body">
+        <div class="module-item"><span class="dot"></span>Login / Logout</div>
+        <div class="module-item"><span class="dot"></span>Browse Products</div>
+        <div class="module-item"><span class="dot"></span>Cart</div>
+        <div class="module-item"><span class="dot"></span>Place Orders</div>
+        <div class="module-item"><span class="dot"></span>Order History</div>
+      </div>
+    </div>
+
+    <!-- Farmers -->
+    <div class="module-col col-green">
+      <div class="module-col-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Farmers
+      </div>
+      <div class="module-col-body">
+        <div class="module-item"><span class="dot"></span>Login / Logout</div>
+        <div class="module-item"><span class="dot"></span>Profile View</div>
+        <div class="module-item"><span class="dot"></span>Stock View</div>
+        <div class="module-item"><span class="dot"></span>Payments View</div>
+      </div>
+    </div>
+
+    <!-- Admin -->
+    <div class="module-col col-purple">
+      <div class="module-col-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+        Admin <span class="id-tag">SKUK-A</span>
+      </div>
+      <div class="module-col-body">
+        <div class="module-item"><span class="dot"></span>Farmers Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Employees Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Market Price Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Hub Mgmt (Stock)</div>
+        <div class="module-item"><span class="dot"></span>Transport View</div>
+        <div class="module-item"><span class="dot"></span>Contact Messages</div>
+      </div>
+    </div>
+
+    <!-- Hub -->
+    <div class="module-col col-amber">
+      <div class="module-col-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
+        Hub <span class="id-tag">SKUK-H</span>
+      </div>
+      <div class="module-col-body">
+        <div class="module-item"><span class="dot"></span>Farmers Stock</div>
+        <div class="module-item"><span class="dot"></span>Stock Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Farmers Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Staff Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Driver Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Attendance Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Transport Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Order Mgmt</div>
+      </div>
+    </div>
+
+    <!-- Agent -->
+    <div class="module-col col-coral">
+      <div class="module-col-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Agent <span class="id-tag">SKUK-AG</span>
+      </div>
+      <div class="module-col-body">
+        <div class="module-item"><span class="dot"></span>Farmers View</div>
+        <div class="module-item"><span class="dot"></span>Product Mgmt</div>
+        <div class="module-item"><span class="dot"></span>Market Price View</div>
+        <div class="module-item"><span class="dot"></span>Logout</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ LAYER 4: BACKEND SERVICES ══ -->
+<div class="layer">
+  <span class="layer-label">Backend Services — Python Django</span>
+  <div class="service-chips">
+    <div class="chip c-teal">Auth Service</div>
+    <div class="chip c-teal">Order Service</div>
+    <div class="chip c-teal">Product Service</div>
+    <div class="chip c-teal">Stock Service</div>
+    <div class="chip c-teal">Farmer Service</div>
+    <div class="chip c-teal">Payment Service</div>
+    <div class="chip c-teal">Notification Service</div>
+    <div class="chip c-teal">Transport Service</div>
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ LAYER 5: DATABASE ══ -->
+<div class="layer">
+  <span class="layer-label">Database Layer — PostgreSQL</span>
+  <div class="row">
+    <div class="db-card">
+      <div class="db-icon">🗄️</div>
+      <div class="db-name">Users DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">🌾</div>
+      <div class="db-name">Farmers DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">📦</div>
+      <div class="db-name">Products DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">🛒</div>
+      <div class="db-name">Orders DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">🏭</div>
+      <div class="db-name">Stock DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">🚚</div>
+      <div class="db-name">Transport DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">💰</div>
+      <div class="db-name">Payments DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+    <div class="db-card">
+      <div class="db-icon">📊</div>
+      <div class="db-name">Market Price DB</div>
+      <div class="db-type">PostgreSQL</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ DATA FLOW PIPELINE ══ -->
+<div class="layer">
+  <span class="layer-label">Data Flow — Farmer to Customer</span>
+  <div class="pipeline">
+
+    <div class="pipeline-step c-green">
+      <div class="step-icon">🧑‍🌾</div>
+      <div class="step-name" style="color:var(--green)">Farmers</div>
+      <div class="step-sub">Add produce</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step c-coral">
+      <div class="step-icon">🧑‍💼</div>
+      <div class="step-name" style="color:var(--coral)">Agent</div>
+      <div class="step-sub">List products</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step c-amber">
+      <div class="step-icon">🏭</div>
+      <div class="step-name" style="color:var(--amber)">Hub Warehouse</div>
+      <div class="step-sub">Collect &amp; store</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step" style="background:var(--surface2);border:1px solid var(--border2);">
+      <div class="step-icon">🚚</div>
+      <div class="step-name" style="color:var(--muted)">Logistics</div>
+      <div class="step-sub">Driver dispatch</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+
+    <div class="pipeline-step c-blue">
+      <div class="step-icon">🛒</div>
+      <div class="step-name" style="color:var(--blue)">Users</div>
+      <div class="step-sub">Receive order</div>
+    </div>
+
+  </div>
+
+  <!-- Order Flow -->
+  <div style="margin-top:12px;">
+    <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;letter-spacing:0.5px;">ORDER FLOW</div>
+    <div class="order-flow">
+      <div class="of-step" style="color:var(--blue)">User Places Order</div>
+      <div class="of-arrow">›</div>
+      <div class="of-step" style="color:var(--teal)">Order Service</div>
+      <div class="of-arrow">›</div>
+      <div class="of-step" style="color:var(--amber)">Hub Stock Check</div>
+      <div class="of-arrow">›</div>
+      <div class="of-step" style="color:var(--muted)">Transport Assigned</div>
+      <div class="of-arrow">›</div>
+      <div class="of-step" style="color:var(--coral)">Driver Dispatch</div>
+      <div class="of-arrow">›</div>
+      <div class="of-step" style="color:var(--green)">✓ Delivered</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow">↓ ↓ ↓ ↓ ↓</div>
+
+<!-- ══ EXTERNAL SERVICES ══ -->
+<div class="layer">
+  <span class="layer-label">External Services &amp; Integrations</span>
+  <div class="row">
+    <div class="ext-card">
+      <div class="ext-icon">💳</div>
+      <div class="ext-name">Payment Gateway</div>
+      <div class="ext-sub">Razorpay</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-icon">📱</div>
+      <div class="ext-name">SMS Notifications</div>
+      <div class="ext-sub">Twilio</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-icon">🗺️</div>
+      <div class="ext-name">Maps &amp; Routing</div>
+      <div class="ext-sub">Google Maps API</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-icon">📧</div>
+      <div class="ext-name">Email Service</div>
+      <div class="ext-sub">SMTP / SendGrid</div>
+    </div>
+    <div class="ext-card">
+      <div class="ext-icon">☁️</div>
+      <div class="ext-name">File Storage</div>
+      <div class="ext-sub">AWS S3 / Cloudinary</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEGEND ══ -->
+<div class="legend">
+  <div style="font-size:11px;font-weight:700;color:var(--muted);width:100%;font-family:'JetBrains Mono',monospace;letter-spacing:0.8px;">LEGEND</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--blue)"></div>Users Module</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--green)"></div>Farmers Module</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--purple)"></div>Admin Module (SKUK-A)</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--amber)"></div>Hub Module (SKUK-H)</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--coral)"></div>Agent Module (SKUK-AG)</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--teal)"></div>Django Backend Services</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--muted)"></div>PostgreSQL Database</div>
+  <div class="legend-item"><div class="leg-dot" style="background:var(--pink)"></div>External Integrations</div>
+  <div class="legend-item" style="margin-left:auto;color:var(--muted);font-size:10px;font-family:'JetBrains Mono',monospace;">Sathyabama University · UzhavanKart Project</div>
+</div>
+
+</body>
+</html>
